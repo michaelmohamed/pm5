@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "pm5"
+version = "0.1.0"
+description = "Like pm2 but without node.js"
+authors = ["Michael Mohamed <michaelm063089@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.scripts]
+pm5 = 'pm5.pm5:app'
+
+[tool.poetry.dependencies]
+python = "^3.9"
+loguru = "^0.7.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

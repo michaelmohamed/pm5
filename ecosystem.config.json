@@ -1,0 +1,30 @@
+{
+    "services":[
+       {
+          "disabled":false,
+          "name":"Test Application 1",
+          "interpreter":"python3.9",
+          "interpreter_args":[],
+          "script":"test.py",
+          "args":[],
+          "instances":1,
+          "wait_ready":true,
+          "autorestart":true,
+          "max_restarts":2,
+          "env":{}
+       },
+       {
+          "disabled":false,
+          "name":"Test Application 2",
+          "interpreter":"python3.9",
+          "interpreter_args":[],
+          "script":"test.py",
+          "args":[],
+          "instances":1,
+          "wait_ready":true,
+          "autorestart":true,
+          "max_restarts":2,
+          "env":{}
+       }
+    ]
+ }
