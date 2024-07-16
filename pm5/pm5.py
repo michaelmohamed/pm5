@@ -31,12 +31,10 @@ def read_config(file_path):
 # Function to start a service instance
 def start_service(service, instance_id):
     # Construct the command to start the service
-    command = (
-        [service["interpreter"]]  # Interpreter to run the script (e.g., python)
-        + service.get("interpreter_args", [])  # Optional interpreter arguments
-        + [service.get("script", "")]  # Script to execute
-        + service.get("args", [])  # Optional script arguments
-    )
+    command = [service["interpreter"]] + service.get("interpreter_args", [])
+    if service["script"]:
+        command.append(service["script"])
+    command += service.get("args", [])
 
     env = os.environ.copy()  # Copy current environment variables
 
