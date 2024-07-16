@@ -32,6 +32,7 @@ jobs:
 
       - name: Install, Test, Build, Deploy
         run: |
+          poetry config repositories.pypi https://pypi.org/legacy/
           poetry config http-basic.pypi "__token__" "${POETRY_PYPI_TOKEN_PYPI}"
           cd ./pm5
           poetry version $(git describe --tags --abbrev=0)
