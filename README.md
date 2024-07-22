@@ -4,7 +4,7 @@
 
 `pm5` is a Python package inspired by [pm2](https://pm2.keymetrics.io/), designed to easily manage multiple services and their configurations. It is particularly useful for advanced scenarios where precise control over CPU usage, service monitoring, and automatic restarts are required. This package was created to overcome limitations in managing multiple Celery queues and workers, allowing for more granular control of allocated CPU.
 
-`pm5` is a simple solution for developers and system administrators who need advanced control over multiple services and their configurations. Its ability to manage resources, automate restarts, and handle graceful shutdowns makes it an essential tool for complex service management scenarios.
+`pm5` is a simple tool for developers and system administrators who need advanced control over multiple services and their configurations. Its ability to manage resources, automate restarts, and handle graceful shutdowns makes it an essential tool for complex service management scenarios.
 
 ### Use Cases
 
