@@ -359,10 +359,10 @@ def app():
     args = get_app_args()
 
     if args["command"] == "start":
-        if args["daemon"]:
-            start_daemon()
-        else:
+        if args["debug"]:
             main(**args)
+        else:
+            start_daemon()
     elif args["command"] == "stop":
         stop_daemon()
     else:

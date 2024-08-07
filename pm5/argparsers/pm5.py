@@ -18,7 +18,9 @@ def get_app_args():
         type=str,
     )
     start_parser.add_argument(
-        "--daemon", action="store_true", help="Run the process manager as a daemon"
+        "--debug",
+        action="store_true",
+        help="Do not run the process manager as a daemon",
     )
 
     subparsers.add_parser("stop", help="Stop the process manager daemon")
