@@ -6,11 +6,15 @@ import sys
 import time
 from threading import Lock, Thread
 
+import daemon
+import daemon.pidfile
+from lockfile import AlreadyLocked
 from loguru import logger
 
 from pm5.argparsers.pm5 import get_app_args
 
 LOCK_FILE = "process_lock.json"  # File to store process IDs to manage process locking
+PID_FILE = ".daemon.pid"  # File to store the PID of the daemon
 
 lock = Lock()  # Lock to handle thread synchronization
 
@@ -315,5 +319,51 @@ def main(**kwargs):
         sys.exit(0)
 
 
-def app():
+def daemon_main():
     main(**get_app_args())
+
+
+def start_daemon():
+    try:
+        with daemon.DaemonContext(
+            working_directory=os.getcwd(),
+            umask=0o002,
+            pidfile=daemon.pidfile.TimeoutPIDLockFile(PID_FILE),
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        ):
+            daemon_main()
+    except AlreadyLocked:
+        logger.error("Daemon is already running.")
+    except Exception as e:
+        logger.exception("Error starting daemon.")
+
+
+def stop_daemon():
+    try:
+        with open(PID_FILE, "r") as f:
+            pid = int(f.read().strip())
+            os.kill(pid, signal.SIGTERM)
+            logger.info("Daemon stopped successfully.")
+            # Clear the PID file
+            os.remove(PID_FILE)
+    except FileNotFoundError:
+        logger.error("PID file not found. Is the daemon running?")
+    except ProcessLookupError:
+        logger.error("No such process. The daemon may have already stopped.")
+    except Exception as e:
+        logger.error(f"Error stopping daemon: {e}")
+
+
+def app():
+    args = get_app_args()
+
+    if args["command"] == "start":
+        if args["daemon"]:
+            start_daemon()
+        else:
+            main(**args)
+    elif args["command"] == "stop":
+        stop_daemon()
+    else:
+        logger.error("Unknown command. Use 'start' or 'stop'.")
