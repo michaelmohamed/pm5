@@ -89,7 +89,6 @@ positional arguments:
 optional arguments:
   -h, --help    show this help message and exit
 ```
-Run `pm5 --help` to start all configured services as defined in your ecosystem configuration file.
 
 #### Start the stack as a daemon
 
