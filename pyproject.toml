@@ -12,6 +12,7 @@ pm5 = 'pm5.pm5:app'
 [tool.poetry.dependencies]
 python = "^3.9"
 loguru = "^0.7.2"
+python-daemon = "^3.0.1"
 
 [build-system]
 requires = ["poetry-core"]
