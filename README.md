@@ -73,8 +73,36 @@ Create an ecosystem configuration file (e.g., `ecosystem.config.json`) to define
 
 ### Usage
 
-Run `pm5` to start all configured services as defined in your ecosystem configuration file.
+#### Help
 
-```bash
-pm5 --config_file ecosystem.config.json
+```shell
+❯ pm5 --help
+usage: pm5 [-h] {start,stop} ...
+
+Like pm2 but without node.js.
+
+positional arguments:
+  {start,stop}
+    start       Start the process manager daemon
+    stop        Stop the process manager daemon
+
+optional arguments:
+  -h, --help    show this help message and exit
+```
+
+#### Start the stack as a daemon
+
+```shell
+pm5 start
+```
+
+#### Stop the daemonized stack
+
+```shell
+pm5 stop
+```
+
+#### Start the app without daemonizing
+```shell
+pm5 start --debug
 ```
