@@ -246,17 +246,28 @@ def clear_lock_file():
 # Function to terminate existing processes from the lock file
 def terminate_existing_processes():
     pids = read_lock_file()
+    active_pids = []
 
     for pid in pids:
         try:
+            # Verify if the process group is still running
+            os.killpg(pid, 0)
             logger.info(f"Terminating existing process group with pid: {pid}")
-
-            os.killpg(pid, signal.SIGTERM)  # Send SIGTERM to process group
-
+            os.killpg(pid, signal.SIGTERM)
+            active_pids.append(pid)
         except ProcessLookupError:
             logger.warning(f"No process group found with pid: {pid}")
+        except PermissionError:
+            logger.warning(
+                f"Permission denied to terminate process group with pid: {pid}"
+            )
 
-    clear_lock_file()  # Clear the lock file
+    # Update the lock file with only the active pids, if any, or clear it
+    if active_pids:
+        with open(LOCK_FILE, "w") as file:
+            json.dump(active_pids, file)
+    else:
+        clear_lock_file()
 
 
 # Main function to start the process manager
