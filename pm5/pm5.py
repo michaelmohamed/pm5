@@ -270,6 +270,24 @@ def terminate_existing_processes():
         clear_lock_file()
 
 
+# Function to show the status of the processes
+def show_status():
+    pids = read_lock_file()
+    if not pids:
+        logger.info("No processes are currently running.")
+        return
+
+    logger.info("Current status of managed processes:")
+    for pid in pids:
+        try:
+            os.kill(pid, 0)  # Check if the process is still running
+            status = "Running"
+        except ProcessLookupError:
+            status = "Not Running"
+        service_name = process_service_map.get(pid, "Unknown service")
+        logger.info(f"Service: {service_name}, PID: {pid}, Status: {status}")
+
+
 # Main function to start the process manager
 def main(**kwargs):
     # Print the PID of the current Python process
@@ -390,5 +408,7 @@ def app():
             start_daemon()
     elif args["command"] == "stop":
         stop_daemon()
+    elif args["command"] == "status":
+        show_status()
     else:
-        logger.error("Unknown command. Use 'start' or 'stop'.")
+        logger.error("Unknown command. Use 'start', 'stop', or 'status'.")

@@ -9,6 +9,10 @@ def get_app_args():
     start_parser = subparsers.add_parser(
         "start", help="Start the process manager daemon"
     )
+
+    start_parser = subparsers.add_parser(
+        "status", help="Get the status of the process manager daemon"
+    )
     start_parser.add_argument(
         "-c",
         "--config_file",
