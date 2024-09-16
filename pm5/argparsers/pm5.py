@@ -23,6 +23,8 @@ def get_app_args():
         help="Do not run the process manager as a daemon",
     )
 
+    subparsers.add_parser("status", help="Get the status of the process manager daemon")
+
     subparsers.add_parser("stop", help="Stop the process manager daemon")
 
     args = vars(parser.parse_args())
