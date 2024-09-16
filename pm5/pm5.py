@@ -13,7 +13,9 @@ from loguru import logger
 
 from pm5.argparsers.pm5 import get_app_args
 
-LOCK_FILE = "process_lock.json"  # File to store process IDs to manage process locking
+LOCK_FILE = (
+    "process_lock.json"  # File to store the mapping of process IDs to service names
+)
 PID_FILE = ".daemon.pid"  # File to store the PID of the daemon
 
 lock = Lock()  # Lock to handle thread synchronization
@@ -52,7 +54,7 @@ def start_service(service, instance_id):
 
     with lock:  # Ensure thread-safe access
         processes.append(process)  # Add process to the list
-        process_service_map[process.pid] = service[
+        process_service_map[str(process.pid)] = service[
             "name"
         ]  # Map process ID to service name
         update_lock_file()  # Update the lock file with running process IDs and service names
@@ -123,7 +125,7 @@ def cleanup_processes():
 
     with lock:
         for process in processes:
-            service_name = process_service_map.get(process.pid, "Unknown service")
+            service_name = process_service_map.get(str(process.pid), "Unknown service")
             try:
                 logger.info(
                     f"Sending SIGTERM to process group {os.getpgid(process.pid)} of service '{service_name}'"
@@ -140,7 +142,7 @@ def cleanup_processes():
         time.sleep(1)  # Give some time for processes to terminate gracefully
 
         for process in processes:
-            service_name = process_service_map.get(process.pid, "Unknown service")
+            service_name = process_service_map.get(str(process.pid), "Unknown service")
             if process.poll() is None:  # Check if process is still running
                 try:
                     logger.info(
@@ -158,7 +160,9 @@ def cleanup_processes():
             try:
                 process.wait(timeout=5)  # Wait for process to terminate
             except subprocess.TimeoutExpired:
-                service_name = process_service_map.get(process.pid, "Unknown service")
+                service_name = process_service_map.get(
+                    str(process.pid), "Unknown service"
+                )
                 logger.warning(
                     f"Process {process.pid} of service '{service_name}' did not terminate in time"
                 )
@@ -226,7 +230,7 @@ def terminate_existing_processes():
             os.killpg(pid, 0)  # Verify if the process group is still running
             logger.info(f"Terminating existing process group with pid: {pid}")
             os.killpg(pid, signal.SIGTERM)
-            active_service_map[pid] = service_name
+            active_service_map[str(pid)] = service_name
         except ProcessLookupError:
             logger.warning(f"No process group found with pid: {pid}")
         except PermissionError:
