@@ -336,6 +336,20 @@ def daemon_main():
 
 def start_daemon():
     try:
+        # Check if the PID file exists and the process is still running
+        if os.path.exists(PID_FILE):
+            with open(PID_FILE, "r") as f:
+                pid = int(f.read().strip())
+                try:
+                    os.kill(pid, 0)  # Check if the process is still running
+                    logger.error("Daemon is already running.")
+                    return
+                except ProcessLookupError:
+                    logger.warning(
+                        "Stale PID file found. Removing and continuing to start daemon."
+                    )
+                    os.remove(PID_FILE)  # Remove the stale PID file
+
         with daemon.DaemonContext(
             working_directory=os.getcwd(),
             umask=0o002,
@@ -345,7 +359,7 @@ def start_daemon():
         ):
             daemon_main()
     except AlreadyLocked:
-        logger.error("Daemon is already running.")
+        logger.error("Daemon is already running and PID file is locked.")
     except Exception as e:
         logger.exception("Error starting daemon.")
 
