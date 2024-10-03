@@ -27,6 +27,15 @@ processes = []
 process_service_map = {}
 
 
+# Set up logging to a file
+def setup_logging(log_dir):
+    log_file = os.path.join(log_dir, ".daemon.log")
+    logger.add(
+        log_file, rotation="10 MB", retention="7 days", backtrace=True, diagnose=True
+    )
+    logger.info(f"Logging setup complete. Log file located at: {log_file}")
+
+
 # Function to read the ecosystem configuration from a JSON file
 def read_config(file_path):
     with open(file_path, "r") as file:
@@ -81,7 +90,10 @@ def monitor_service(service, process, instance_id):
         with lock:
             if process in processes:
                 processes.remove(process)  # Remove process from the list
-                update_lock_file()  # Update the lock file
+                if str(process.pid) in process_service_map:
+                    # Remove the process from the lock file
+                    del process_service_map[str(process.pid)]
+                    update_lock_file()
 
         if shutdown:
             break
@@ -91,11 +103,27 @@ def monitor_service(service, process, instance_id):
                 f"Instance {instance_id} of service '{service['name']}' exited with error code {process.returncode}"
             )
 
+            with lock:
+                # Ensure the lock file is updated after error
+                if str(process.pid) in process_service_map:
+                    del process_service_map[str(process.pid)]
+                    update_lock_file()
+
         if restarts < max_restarts and service.get("autorestart", False):
             logger.info(
                 f"Restarting instance {instance_id} of service '{service['name']}' (Restart {restarts + 1})"
             )
             process = start_service(service, instance_id)  # Restart the service
+
+            with lock:
+                # Increment the restart count in the lock file
+                pid_str = str(process.pid)
+                process_service_map[pid_str] = {
+                    "name": service["name"],
+                    "restarts": restarts + 1,  # Increment restart count
+                }
+                update_lock_file()  # Update the lock file
+
             restarts += 1  # Increment restart count
 
         elif restarts == max_restarts:
@@ -179,7 +207,7 @@ def handle_exit(signum, frame):
     if shutdown:
         return
 
-    logger.info("Terminating services...")
+    logger.info("Terminating all services...")
     cleanup_processes()
 
     with lock:
@@ -254,26 +282,50 @@ def show_status():
         return
 
     logger.info("Current status of managed processes:")
-    for pid, service_name in service_map.items():
+    for pid, service_info in service_map.items():
         try:
             pid = int(pid)
             os.kill(pid, 0)  # Check if the process is still running
             status = "Running"
         except ProcessLookupError:
             status = "Not Running"
-        logger.info(f"Service: {service_name}, PID: {pid}, Status: {status}")
+
+        # Handle case where service_info might be a string (e.g., just the service name)
+        if isinstance(service_info, str):
+            service_name = service_info
+            restarts = 0  # Default restarts to 0 if not available
+        else:
+            service_name = service_info.get("name", "Unknown")
+            restarts = service_info.get("restarts", 0)
+
+        logger.info(
+            f"Service: {service_name}, PID: {pid}, Status: {status}, Restarts: {restarts}"
+        )
 
 
 # Main function to start the process manager
 def main(**kwargs):
+    config_file_path = kwargs["config_file"]
+
+    # Check if the ecosystem config file exists before setting up logging
+    if not os.path.exists(config_file_path):
+        logger.error(
+            f"Ecosystem configuration file '{config_file_path}' not found. Exiting..."
+        )
+        sys.exit(1)
+
+    config_dir = os.path.dirname(config_file_path)
+    setup_logging(config_dir)
+
     logger.debug(f"The process manager process id is: {os.getpid()}")
 
+    # Setup signal handlers
     signal.signal(signal.SIGTERM, handle_exit)
     signal.signal(signal.SIGINT, handle_exit)
 
     terminate_existing_processes()  # Terminate any existing processes from previous runs
 
-    config = read_config(kwargs["config_file"])
+    config = read_config(config_file_path)
     services = config["services"]
 
     total_cpus = os.cpu_count()
@@ -306,7 +358,7 @@ def main(**kwargs):
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("Terminating services via keyboard exit...")
+        logger.info("Terminating all services via keyboard exit...")
         cleanup_processes()
         sys.exit(0)
 
