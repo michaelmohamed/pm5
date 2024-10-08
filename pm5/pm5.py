@@ -4,6 +4,8 @@ import signal
 import subprocess
 import sys
 import time
+
+# import traceback
 from threading import Lock, Thread
 
 import daemon
@@ -204,7 +206,13 @@ def cleanup_processes():
 def handle_exit(signum, frame):
     global shutdown
 
+    # Log debug information about the signal and the call stack
+    logger.debug(f"PM5 received exit signal: {signum}")
+    # logger.debug("Stack trace leading to shutdown:")
+    # logger.debug("".join(traceback.format_stack(frame)))
+
     if shutdown:
+        logger.debug("Shutdown already in progress, ignoring signal.")
         return
 
     logger.info("Terminating all services...")
@@ -398,6 +406,7 @@ def start_daemon():
 
 
 def stop_daemon():
+    logger.debug("User requested to stop the daemon.")
     try:
         with open(PID_FILE, "r") as f:
             pid = int(f.read().strip())
